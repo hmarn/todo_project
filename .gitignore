@@ -1,0 +1,81 @@
+# === Python ===
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.py[cod]
+*.so
+
+# === library
+lib/
+*.egg-info/
+
+# === Django ===
+*.log
+db.sqlite3
+media/
+staticfiles/         # collected static files (via collectstatic)
+local_settings.py
+.env
+
+# === Migrations ===
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# === Virtual Environments ===
+venv/
+env/
+ENV/
+.venv/
+# Ignore virtualenv's bin folder just in case
+bin/
+# Ignore virtual environment artifacts
+pyvenv.cfg
+
+# === IDEs and Editors ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === OS Specific ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# === Node (if using frontend tools) ===
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# === Coverage reports ===
+htmlcov/
+.coverage
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+
+# === MyPy / Pyright / Pyre ===
+.mypy_cache/
+.pytype/
+.pyre/
+
+# === pytest ===
+.cache/
+.pytest_cache/
+
+# === Docker ===
+*.pid
+*.seed
+*.pid.lock
+
+# === Backup files ===
+*~
+*.bak
+*.swp
+*.tmp
+*.orig

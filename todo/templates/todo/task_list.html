@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 10px; background: #f4f4f4; margin: 5px; display: flex; justify-content: space-between; }
+        form { margin: 20px 0; }
+        input { padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>To-Do List</h1>
+
+    <form method="POST" action="{% url 'add_task' %}">
+        {% csrf_token %}
+        <input type="text" name="title" placeholder="New task">
+        <button type="submit">Add</button>
+    </form>
+
+    <ul>
+        {% for task in tasks %}
+        <li>
+            {{ task.title }} - Duration: {{ task.duration }}
+
+            <span id="timer-{{ task.id }}">
+                {% if task.duration %}
+                    {% with task.duration as total %}
+                        {% with total|divisibleby:3600 as h %}
+                        {% with total|divisibleby:60|add:"-3600*h" as m %}
+                        {% with total|add:"-60*m-3600*h" as s %}
+                            <span id="timer-hours-{{ task.id }}">{{ h|stringformat:"02d" }}</span>:
+                            <span id="timer-minutes-{{ task.id }}">{{ m|stringformat:"02d" }}</span>:
+                            <span id="timer-seconds-{{ task.id }}">{{ s|stringformat:"02d" }}</span>
+                        {% endwith %}{% endwith %}{% endwith %}
+                    {% endwith %}
+                {% else %}
+                    <!-- If task.duration is not set or is invalid, show 00:00:00 -->
+                    <span id="timer-hours-{{ task.id }}">00</span>:
+                    <span id="timer-minutes-{{ task.id }}">00</span>:
+                    <span id="timer-seconds-{{ task.id }}">00</span>
+                {% endif %}
+            </span>
+            
+
+            <button
+                id="start-btn-{{ task.id }}"
+                onclick="startTimer({{ task.id }})"
+                style="display: {% if task.duration <= 0 %}inline-block{% else %}none{% endif %};"
+            >START</button>
+            
+            <button
+                id="resume-btn-{{ task.id }}"
+                onclick="resumeTimer({{ task.id }})"
+                style="display: {% if task.duration > 0 %}inline-block{% else %}none{% endif %};"
+            >RESUME</button>
+            
+            <button id="pause-btn-{{ task.id }}" onclick="pauseTimer({{ task.id }})" style="display:none;">PAUSE</button>
+
+            <button onclick="resetTimer({{ task.id }})">Reset</button>
+            <a href="{% url 'remove_task' task.id %}" style="color: red;">Remove</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <script>
+        const socketMap = {};
+
+        function getOrCreateSocket(taskId) {
+            if (!socketMap[taskId] || socketMap[taskId].readyState !== WebSocket.OPEN) {
+                const socket = new WebSocket(`ws://${window.location.host}/ws/timer/${taskId}/`);
+
+                socket.onmessage = function (e) {
+                    const data = JSON.parse(e.data);
+                    document.getElementById(`timer-hours-${taskId}`).innerText = String(data.hours).padStart(2, '0');
+                    document.getElementById(`timer-minutes-${taskId}`).innerText = String(data.minutes).padStart(2, '0');
+                    document.getElementById(`timer-seconds-${taskId}`).innerText = String(data.seconds).padStart(2, '0');
+
+                };
+
+                socketMap[taskId] = socket;
+            }
+            return socketMap[taskId];
+        }
+
+        function sendAction(taskId, action) {
+            const socket = getOrCreateSocket(taskId);
+            socket.onopen = function () {
+                socket.send(JSON.stringify({ action }));
+            };
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ action }));
+            }
+        }
+
+        function startTimer(taskId) {
+            sendAction(taskId, 'start');
+            toggleButtons(taskId, 'resume');
+        }
+        function pauseTimer(taskId) {
+            sendAction(taskId, 'pause');
+            toggleButtons(taskId, 'resume');
+        }
+        function resumeTimer(taskId) {
+            sendAction(taskId, 'resume');
+            toggleButtons(taskId, 'pause');
+        }
+        function resetTimer(taskId) {
+            sendAction(taskId, 'reset');
+            toggleButtons(taskId, 'start');
+        }
+
+        function toggleButtons(taskId, state) {
+            const startBtn = document.getElementById(`start-btn-${taskId}`);
+            const resumeBtn = document.getElementById(`resume-btn-${taskId}`);
+            const pauseBtn = document.getElementById(`pause-btn-${taskId}`);
+            
+            if (state === 'start') {
+                startBtn.style.display = 'inline-block';
+                resumeBtn.style.display = 'none';
+                pauseBtn.style.display = 'none';
+            } else if (state === 'resume') {
+                startBtn.style.display = 'none';
+                resumeBtn.style.display = 'inline-block';
+                pauseBtn.style.display = 'none';
+            } else if (state === 'pause') {
+                startBtn.style.display = 'none';
+                resumeBtn.style.display = 'none';
+                pauseBtn.style.display = 'inline-block';
+            }
+        }
+    </script>   
+    <!-- <script type="text/javascript" src="{% static '../js/timer.js' %}"></script> -->
+</body>
+</html>
