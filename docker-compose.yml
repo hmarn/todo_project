@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: daphne todo_project.asgi:application -b 0.0.0.0 -p 8000  # Use Daphne instead of Django's runserver
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - todo_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - todo_network
+
+volumes:
+  redis_data:
+
+networks:
+  todo_network:
+    driver: bridge

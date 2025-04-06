@@ -1,12 +1,25 @@
-# Use official Redis image as base
-FROM redis:latest
+# Use official Python image
+FROM python:3.9-slim
 
-# Optional: Expose the Redis port (default is 6379)
-EXPOSE 6379
+# Set working directory in container
+WORKDIR /app
 
-# Optional: Use a custom redis.conf (uncomment the next two lines if you have one)
-# COPY redis.conf /usr/local/etc/redis/redis.conf
-# CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]
+# Install dependencies
+RUN pip install --no-cache-dir virtualenv
+RUN virtualenv venv
+RUN . venv/bin/activate
 
-# Default command to run Redis server
-CMD ["redis-server"]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
+COPY . .
+
+# Collect static files
+# RUN python manage.py collectstatic --noinput
+
+# Expose the port that Daphne will run on
+EXPOSE 8000
+
+# Command to run the application using Daphne for ASGI
+CMD ["daphne", "todo_project.asgi:application", "-b", "0.0.0.0", "-p", "8000"]

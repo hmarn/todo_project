@@ -45,12 +45,15 @@ INSTALLED_APPS = [
 
 ASGI_APPLICATION = "todo_project.asgi.application"
 
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+
 # Ensure Redis is running locally on Redis port 6379
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
